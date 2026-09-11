@@ -101,6 +101,12 @@ function convertToRGB565(imageData, backgroundColor) {
   };
 }
 
+function getContrastingColor(hex) {
+    const { r, g, b } = hexToRgb(hex);
+    const brightness = (r * 289 + g * 587 + b * 114) / 1000;
+    return brightness > 128 ? "#000000" : "#ffffff"
+}
+
 function ThemeDigit({ digit, digits, scale }) {
     const data = digits[digit];
 
@@ -448,7 +454,10 @@ function App() {
                 return (
                   <span
                     className="clock-colon"
-                    key={`${character}-${index}`}
+                      key={`${character}-${index}`}
+		      style={{
+			  color: getContrastingColor(backgroundColor),
+		      }}
                   >
                     :
                 </span>
