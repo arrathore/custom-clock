@@ -18,3 +18,11 @@ body {
   color: #222;
   background: #fff;
 }
+
+@media (prefers-color-scheme: dark) {
+  body {
+    color: #e0e0e0;
+    background: #121212;
+  }
+}
+
