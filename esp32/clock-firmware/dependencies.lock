@@ -1,0 +1,20 @@
+dependencies:
+  idf:
+    source:
+      type: idf
+    version: 6.0.1
+  miraitowa-la/esp_st7735:
+    component_hash: 01fb1b218ccc9891baf3131eefa26d3cf025d65be7ee3ecf8809a9b10cba3e7a
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 0.1.1
+direct_dependencies:
+- miraitowa-la/esp_st7735
+manifest_hash: 2acda1d5fc1b4d0dac9ca94a7da7f71dc555bde7f3b081edd9c9727827186d0b
+target: esp32c6
+version: 2.0.0
