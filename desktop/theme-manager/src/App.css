@@ -96,24 +96,35 @@ main {
   gap: 12px;
 }
 
-.folder-button {
+.folder-button,
+.theme-header button,
+.asset button {
   display: block !important;
   padding: 12px;
   text-align: center;
   color: white;
   background: #333;
   cursor: pointer;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
 }
 
-.folder-button:hover {
+.folder-button:hover,
+.theme-header button:hover,
+.asset button:hover {
   background: #444;
 }
 
 @media (prefers-color-scheme: dark) {
-  .folder-button {
+  .folder-button,
+  .theme-header button,
+  .asset button {
     background: #444;
   }
-  .folder-button:hover {
+  .folder-button:hover,
+  .theme-header button:hover,
+  .asset button:hover {
     background: #555;
   }
 }
