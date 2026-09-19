@@ -44,7 +44,7 @@ export default function ThemeAssetsGrid({ convertedTheme, themeHeight, digitHeig
                             <div>
                                 <strong>{digit}.png</strong>
                                 <span>
-                                    {asset.width} × {asset.height}
+                                    {scaledWidth} × {digitHeight}
                                 </span>
                                 <span>
                                     {asset.rgb565.length * 2} bytes RGB565
