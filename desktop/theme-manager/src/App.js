@@ -3,6 +3,7 @@ import { DIGITS, DEFAULT_DISPLAY } from './constants';
 import { loadImage, convertToRGB565 } from './utils/imageUtils';
 import ThemeControls from './components/ThemeControls';
 import ThemePreview from './components/ThemePreview';
+import ESP32Sender from './components/ESP32Sender';
 import './App.css';
 
 function App() {
@@ -198,6 +199,15 @@ function App() {
           scale={scale}
           digitHeight={digitHeight}
         />
+
+        {convertedTheme && (
+          <ESP32Sender 
+            convertedTheme={convertedTheme}
+            themeHeight={theme.height}
+            digitHeight={digitHeight}
+            backgroundColor={backgroundColor}
+          />
+        )}
       </main>
     </div>
   );

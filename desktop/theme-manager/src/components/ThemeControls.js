@@ -1,7 +1,9 @@
 import React from 'react';
+import ESP32Sender from './ESP32Sender';
 
 export default function ThemeControls({
     theme,
+    convertedTheme,
     error,
     displayWidth,
     displayHeight,
@@ -145,6 +147,8 @@ export default function ThemeControls({
                     </p>
                 </div>
             )}
+
+            {convertedTheme && <ESP32Sender convertedTheme={convertedTheme} />}
         </section>
     );
 }

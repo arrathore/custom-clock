@@ -10,9 +10,8 @@
 
 #define TAG "server"
 
-#define IMAGE_WIDTH 30
-#define IMAGE_HEIGHT 69
-#define IMAGE_SIZE (IMAGE_WIDTH * IMAGE_HEIGHT * 2)
+#define MAX_IMAGE_WIDTH 128
+#define MAX_IMAGE_HEIGHT 160
 
 static esp_err_t root_handler(httpd_req_t *req) {
   ESP_LOGI(TAG, "/ called");
@@ -22,29 +21,62 @@ static esp_err_t root_handler(httpd_req_t *req) {
   return ESP_OK;
 }
 
+static esp_err_t image_options_handler(httpd_req_t *req) {
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST, OPTIONS");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type, X-Image-Width, X-Image-Height");
+
+  httpd_resp_send(req, NULL, 0);
+
+  return ESP_OK;
+}
+
 static esp_err_t image_handler(httpd_req_t *req) {
   ESP_LOGI(TAG, "/image called");
-  
-  if (req->content_len != IMAGE_SIZE) {
-    ESP_LOGE(TAG, "expected %d bytes, received %d", IMAGE_SIZE, req->content_len);
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
 
+  char width_str[8];
+  char height_str[8];
+
+  if (httpd_req_get_hdr_value_str(req, "X-Image-Width", width_str, sizeof(width_str)) != ESP_OK ||
+      httpd_req_get_hdr_value_str(req, "X-Image-Height", height_str, sizeof(height_str)) != ESP_OK) {
+
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing image dimensions");
+
+    return ESP_FAIL;
+  }
+
+  int width = atoi(width_str);
+  int height = atoi(height_str);
+
+  ESP_LOGI(TAG, "Image: %d x %d", width, height);
+
+  // validate dimensions
+  if (width <= 0 || height <= 0 ||
+      width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid image dimensions");
+
+    return ESP_FAIL;
+  }
+
+  size_t image_size = (size_t)width * height * 2;
+  if (req->content_len != image_size) {
+    ESP_LOGE(TAG, "Expected %zu bytes, received %d", image_size, req->content_len);
     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid image size");
 
     return ESP_FAIL;
   }
 
-  uint8_t *data = malloc(IMAGE_SIZE);
-
+  uint8_t* data = malloc(image_size);
   if (data == NULL) {
     httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Out of memory");
     return ESP_ERR_NO_MEM;
   }
 
   int received = 0;
-
-  while (received < IMAGE_SIZE) {
+  while (received < image_size) {
     int ret =
-        httpd_req_recv(req, (char *)data + received, IMAGE_SIZE - received);
+        httpd_req_recv(req, (char *)data + received, image_size - received);
 
     if (ret <= 0) {
       free(data);
@@ -61,15 +93,14 @@ static esp_err_t image_handler(httpd_req_t *req) {
   ESP_LOGI(TAG, "Received image: %d bytes", received);
 
   // convert big-endian RGB565 to expected format
-  uint16_t *pixels = malloc(IMAGE_WIDTH * IMAGE_HEIGHT * sizeof(uint16_t));
-
+  uint16_t *pixels = malloc(width * height * sizeof(uint16_t));
   if (pixels == NULL) {
     free(data);
     httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Out of memory");
     return ESP_ERR_NO_MEM;
   }
 
-  for (int i = 0; i < IMAGE_WIDTH * IMAGE_HEIGHT; i++) {
+  for (int i = 0; i < width * height; i++) {
     pixels[i] =
       ((uint16_t)data[i * 2] << 8) | data[i * 2 + 1];
   }
@@ -86,13 +117,15 @@ static esp_err_t image_handler(httpd_req_t *req) {
     return ESP_FAIL;
   }
 
-  // replace with more efficient function later
-  for (int y = 0; y < IMAGE_HEIGHT; y++)
-    for (int x = 0; x < IMAGE_WIDTH; x++) {
-      lcd_st7735_draw_pixel(lcd, 49 + x, 45 + y, pixels[y * IMAGE_WIDTH + x]);
+  // TODO: replace with more efficient function
+  for (int y = 0; y < height; y++)
+    for (int x = 0; x < width; x++) {
+      lcd_st7735_draw_pixel(lcd, x, y, pixels[y * width + x]);
     }
 
   free(pixels);
+
+  //httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
   httpd_resp_set_type(req, "text/plain");
   httpd_resp_sendstr(req, "OK");
 
@@ -125,6 +158,14 @@ void server_init(void) {
     .user_ctx = NULL
   };
   httpd_register_uri_handler(server, &image_uri);
+
+  httpd_uri_t image_options_uri = {
+      .uri = "/image",
+      .method = HTTP_OPTIONS,
+      .handler = image_options_handler,
+      .user_ctx = NULL,
+  };
+  httpd_register_uri_handler(server, &image_options_uri);
 
   ESP_LOGI(TAG, "HTTP server started");
 }

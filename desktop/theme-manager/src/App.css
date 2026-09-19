@@ -70,18 +70,74 @@ main {
   gap: 8px;
 }
 
-.control-section input[type="number"] {
+.control-section input[type="number"],
+.control-section input[type="text"],
+.control-section select {
   box-sizing: border-box;
   width: 100%;
   padding: 8px;
   border: 1px solid #bbb;
+  font-family: inherit;
+  font-size: 14px;
 }
 
 @media (prefers-color-scheme: dark) {
-  .control-section input[type="number"] {
+  .control-section input[type="number"],
+  .control-section input[type="text"],
+  .control-section select {
     border: 1px solid #555;
     background: #2a2a2a;
     color: #e0e0e0;
+  }
+}
+
+.esp32-sender button {
+  display: block !important;
+  width: 100%;
+  padding: 12px;
+  text-align: center;
+  color: white;
+  background: #333;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.esp32-sender button:hover:not(:disabled) {
+  background: #444;
+}
+
+.esp32-sender button:disabled {
+  background: #666;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+@media (prefers-color-scheme: dark) {
+  .esp32-sender button {
+    background: #444;
+  }
+  .esp32-sender button:hover:not(:disabled) {
+    background: #555;
+  }
+}
+
+.success {
+  margin-top: 12px;
+  padding: 10px;
+  color: #006400;
+  background: #eaffea;
+  border: 1px solid #aae0aa;
+  font-size: 13px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .success {
+    color: #90ee90;
+    background: #1a331a;
+    border: 1px solid #2d5a2d;
   }
 }
 

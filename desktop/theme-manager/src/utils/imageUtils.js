@@ -90,6 +90,17 @@ export function convertToRGB565(imageData, backgroundColor) {
   };
 }
 
+export function rgb565ToBytes(pixels) {
+    const bytes = new Uint8Array(pixels.length * 2);
+
+    for (let i = 0; i < pixels.length; i++) {
+	bytes[i * 2] = (pixels[i] >> 8) & 0xff;
+	bytes[i * 2 + 1] = pixels[i] & 0xff;
+    }
+
+    return bytes;
+}
+
 export function getContrastingColor(hex) {
     const { r, g, b } = hexToRgb(hex);
     const brightness = (r * 289 + g * 587 + b * 114) / 1000;
