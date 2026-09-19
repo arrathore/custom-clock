@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DIGITS, DEFAULT_DISPLAY } from './constants';
 import { loadImage, convertToRGB565 } from './utils/imageUtils';
 import ThemeControls from './components/ThemeControls';
@@ -196,6 +196,7 @@ function App() {
           use24Hour={use24Hour}
           spacing={spacing}
           scale={scale}
+          digitHeight={digitHeight}
         />
       </main>
     </div>

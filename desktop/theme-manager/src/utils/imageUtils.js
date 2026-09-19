@@ -95,3 +95,41 @@ export function getContrastingColor(hex) {
     const brightness = (r * 289 + g * 587 + b * 114) / 1000;
     return brightness > 128 ? "#000000" : "#ffffff";
 }
+
+export function convertToBMP(imageData) {
+    const { width, height, data } = imageData;
+    const padding = (4 - (width * 3) % 4) % 4;
+    const rowSize = width * 3 + padding;
+    const fileSize = 54 + rowSize * height;
+    const buffer = new ArrayBuffer(fileSize);
+    const view = new DataView(buffer);
+
+    // File Header
+    view.setUint16(0, 0x4D42, true); // BM signature
+    view.setUint32(2, fileSize, true);
+    view.setUint32(10, 54, true);
+
+    // DIB Header
+    view.setUint32(14, 40, true);
+    view.setInt32(18, width, true);
+    view.setInt32(22, height, true);
+    view.setUint16(26, 1, true);
+    view.setUint16(28, 24, true); // 24-bit
+    view.setUint32(34, rowSize * height, true);
+
+    // Pixel data
+    let offset = 54;
+    for (let y = height - 1; y >= 0; y--) {
+        for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4;
+            view.setUint8(offset++, data[i + 2]); // B
+            view.setUint8(offset++, data[i + 1]); // G
+            view.setUint8(offset++, data[i]);     // R
+        }
+        for (let p = 0; p < padding; p++) {
+            view.setUint8(offset++, 0);
+        }
+    }
+
+    return buffer;
+}

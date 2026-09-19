@@ -1,4 +1,3 @@
-import React from 'react';
 import ThemeDigit from './ThemeDigit';
 import ThemeAssetsGrid from './ThemeAssetsGrid';
 import { formatTime } from '../utils/timeUtils';
@@ -14,6 +13,7 @@ export default function ThemePreview({
     use24Hour,
     spacing,
     scale,
+    digitHeight,
 }) {
     return (
         <section className="preview-section">
@@ -68,7 +68,13 @@ export default function ThemePreview({
                 </div>
             </div>
 
-            {theme && <ThemeAssetsGrid convertedTheme={convertedTheme} />}
+            {theme && (
+                <ThemeAssetsGrid
+                    convertedTheme={convertedTheme}
+                    themeHeight={theme.height}
+                    digitHeight={digitHeight}
+                />
+            )}
         </section>
     );
 }
