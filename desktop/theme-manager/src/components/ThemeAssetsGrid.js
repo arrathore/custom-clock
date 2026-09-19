@@ -1,4 +1,5 @@
 import React from 'react';
+import JSZip from 'jszip';
 import { DIGITS } from '../constants';
 import { convertToBMP } from '../utils/imageUtils';
 
@@ -8,7 +9,7 @@ export default function ThemeAssetsGrid({ convertedTheme, themeHeight, digitHeig
     const scale = digitHeight / themeHeight;
     const scaledWidth = Math.round(themeHeight * scale * (convertedTheme.digits['0'].width / convertedTheme.digits['0'].height));
 
-    const downloadBMP = (digit) => {
+    const generateBMPBlob = (digit) => {
         const asset = convertedTheme.digits[digit];
         
         // Resize image
@@ -21,7 +22,11 @@ export default function ThemeAssetsGrid({ convertedTheme, themeHeight, digitHeig
         const imageData = ctx.getImageData(0, 0, scaledWidth, digitHeight);
         
         const buffer = convertToBMP(imageData);
-        const blob = new Blob([buffer], { type: 'image/bmp' });
+        return new Blob([buffer], { type: 'image/bmp' });
+    };
+
+    const downloadBMP = (digit) => {
+        const blob = generateBMPBlob(digit);
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -30,9 +35,29 @@ export default function ThemeAssetsGrid({ convertedTheme, themeHeight, digitHeig
         URL.revokeObjectURL(url);
     };
 
+    const downloadAll = async () => {
+        const zip = new JSZip();
+        
+        for (const digit of DIGITS) {
+            const blob = generateBMPBlob(digit);
+            zip.file(`${digit}.bmp`, blob);
+        }
+
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'theme.zip';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="theme-info">
-            <h2>Theme Assets</h2>
+            <div className="theme-header">
+                <h2>Theme Assets</h2>
+                <button onClick={downloadAll}>Download All</button>
+            </div>
 
             <div className="asset-grid">
                 {DIGITS.map((digit) => {
