@@ -47,7 +47,7 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
 
     return (
         <div className="control-section esp32-sender">
-            <h2>Send to ESP32</h2>
+            <h2>Send single image to ESP32</h2>
             <form onSubmit={handleSend}>
                 <label>
                     ESP32 IP Address
