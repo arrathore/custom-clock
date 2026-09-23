@@ -26,6 +26,7 @@ function App() {
   });
 
   const [use24Hour, setUse24Hour] = useState(true);
+  const [previewStyle, setPreviewStyle] = useState('row');
 
   // determine scale from height of theme's digits
   const scale = useMemo(() => {
@@ -177,6 +178,7 @@ function App() {
           backgroundColor={backgroundColor}
           timeString={timeString}
           use24Hour={use24Hour}
+          previewStyle={previewStyle}
           onThemeFolder={handleThemeFolder}
           setDisplayWidth={setDisplayWidth}
           setDisplayHeight={setDisplayHeight}
@@ -185,6 +187,7 @@ function App() {
           setBackgroundColor={setBackgroundColor}
           setTimeString={setTimeString}
           setUse24Hour={setUse24Hour}
+          setPreviewStyle={setPreviewStyle}
         />
 
         <ThemePreview
@@ -198,6 +201,7 @@ function App() {
           spacing={spacing}
           scale={scale}
           digitHeight={digitHeight}
+          previewStyle={previewStyle}
         />
 
         {convertedTheme && (

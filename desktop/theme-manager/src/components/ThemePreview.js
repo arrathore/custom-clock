@@ -14,6 +14,7 @@ export default function ThemePreview({
     spacing,
     scale,
     digitHeight,
+    previewStyle,
 }) {
     return (
         <section className="preview-section">
@@ -29,37 +30,77 @@ export default function ThemePreview({
                     }}
                 >
                     {theme ? (
-                        <div
-                            className="clock-digits"
-                            style={{
-                                gap: `${spacing}px`,
-                            }}
-                        >
-                            {formatTime(timeString, use24Hour).split("").map((character, index) => {
-                                if (character === ":") {
-                                    return (
-                                        <span
-                                            className="clock-colon"
-                                            key={`${character}-${index}`}
-                                            style={{
-                                                color: getContrastingColor(backgroundColor),
-                                            }}
-                                        >
-                                            :
-                                        </span>
-                                    );
-                                }
+                        previewStyle === 'stacked' ? (
+                            <div
+                                className="clock-digits-stacked"
+                                style={{
+                                    gap: `${spacing}px`,
+                                }}
+                            >
+                                <div
+                                    className="clock-row"
+                                    style={{
+                                        gap: `${spacing}px`,
+                                    }}
+                                >
+                                    {timeString.split(":")[0].split("").map((character, index) => (
+                                        <ThemeDigit
+                                            key={`hour-${character}-${index}`}
+                                            digit={character}
+                                            digits={convertedTheme.digits}
+                                            scale={scale}
+                                        />
+                                    ))}
+                                </div>
+                                <div
+                                    className="clock-row"
+                                    style={{
+                                        gap: `${spacing}px`,
+                                    }}
+                                >
+                                    {timeString.split(":")[1].split("").map((character, index) => (
+                                        <ThemeDigit
+                                            key={`min-${character}-${index}`}
+                                            digit={character}
+                                            digits={convertedTheme.digits}
+                                            scale={scale}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div
+                                className="clock-digits"
+                                style={{
+                                    gap: `${spacing}px`,
+                                }}
+                            >
+                                {formatTime(timeString, use24Hour).split("").map((character, index) => {
+                                    if (character === ":") {
+                                        return (
+                                            <span
+                                                className="clock-colon"
+                                                key={`${character}-${index}`}
+                                                style={{
+                                                    color: getContrastingColor(backgroundColor),
+                                                }}
+                                            >
+                                                :
+                                            </span>
+                                        );
+                                    }
 
-                                return (
-                                    <ThemeDigit
-                                        key={`${character}-${index}`}
-                                        digit={character}
-                                        digits={convertedTheme.digits}
-                                        scale={scale}
-                                    />
-                                );
-                            })}
-                        </div>
+                                    return (
+                                        <ThemeDigit
+                                            key={`${character}-${index}`}
+                                            digit={character}
+                                            digits={convertedTheme.digits}
+                                            scale={scale}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        )
                     ) : (
                         <div className="empty-preview">
                             Choose a theme folder to preview it.

@@ -12,6 +12,7 @@ export default function ThemeControls({
     backgroundColor,
     timeString,
     use24Hour,
+    previewStyle,
     onThemeFolder,
     setDisplayWidth,
     setDisplayHeight,
@@ -20,6 +21,7 @@ export default function ThemeControls({
     setBackgroundColor,
     setTimeString,
     setUse24Hour,
+    setPreviewStyle,
 }) {
     return (
         <section className="controls">
@@ -116,6 +118,17 @@ export default function ThemeControls({
                         onChange={(event) => setUse24Hour(event.target.checked)}
                     />
                     24-hour time
+                </label>
+
+                <label>
+                    Preview Style
+                    <select
+                        value={previewStyle}
+                        onChange={(event) => setPreviewStyle(event.target.value)}
+                    >
+                        <option value="row">Row</option>
+                        <option value="stacked">Stacked</option>
+                    </select>
                 </label>
 
                 <label>
