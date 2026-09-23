@@ -12,8 +12,7 @@
 #include "display.h"
 #include "wifi.h"
 #include "server.h"
-
-#include "0_bmp.h"
+#include "theme.h"
 
 void app_main(void) {
   vTaskDelay(pdMS_TO_TICKS(5000)); // delay for serial output
@@ -35,16 +34,25 @@ void app_main(void) {
 
     lcd_st7735_fill_screen(lcd, 0x0000); // black
   */
-  // display_drawBMP(lcd, __0_bmp, __0_bmp_len, 49, 45);
 
   wifi_init();
   server_init();
+  theme_init();
 
   while (1) {
-    /*
-    printf("ALIVE\n");
-    fflush(stdout);
-    */
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    for (int i = 0; i < 10; i++) {
+      theme_lock();
+      
+      const theme_image_t *image = theme_getImage(i);
+      if (image != NULL) {
+        display_drawImage(display_getHandle(), 
+                          image->pixels, image->width, image->height,
+                          0, 0);
+      }
+
+      theme_unlock();
+
+      vTaskDelay(pdMS_TO_TICKS(500));
+    }
   }
 }

@@ -157,3 +157,18 @@ esp_err_t display_drawBMP(lcd_st7735_t *lcd,
 
   return ESP_OK;
 }
+
+esp_err_t display_drawImage(lcd_st7735_t *lcd,
+                            const uint16_t *pixels,
+                            int width, int height,
+			    int x, int y) {
+  if (lcd == NULL || pixels == NULL ||
+      width <= 0 || height <= 0)
+    return ESP_ERR_INVALID_ARG;
+
+  return lcd_st7735_draw_bitmap(lcd,
+                                x, y,
+				width, height,
+				pixels);
+}
+  
