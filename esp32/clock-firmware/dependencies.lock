@@ -3,6 +3,16 @@ dependencies:
     source:
       type: idf
     version: 6.0.1
+  joltwallet/littlefs:
+    component_hash: 3af20a3d75c49db9dc2286fd50862c34055c9f578419ad1f2bf7ed3ed01391fe
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.22.3
   miraitowa-la/esp_st7735:
     component_hash: 01fb1b218ccc9891baf3131eefa26d3cf025d65be7ee3ecf8809a9b10cba3e7a
     dependencies:
@@ -14,7 +24,8 @@ dependencies:
       type: service
     version: 0.1.1
 direct_dependencies:
+- joltwallet/littlefs
 - miraitowa-la/esp_st7735
-manifest_hash: 2acda1d5fc1b4d0dac9ca94a7da7f71dc555bde7f3b081edd9c9727827186d0b
+manifest_hash: df7f64b4707874c2bfedbdad59a1888d3a58de03e6a5f471c7cd8364ad6191a1
 target: esp32c6
 version: 2.0.0
