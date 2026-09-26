@@ -15,6 +15,8 @@
 #define MAX_IMAGE_WIDTH 128
 #define MAX_IMAGE_HEIGHT 160
 
+#define THEME_WRITE_BUFFER_SIZE 512
+
 // /
 static esp_err_t root_handler(httpd_req_t *req) {
   ESP_LOGI(TAG, "/ called");
@@ -212,6 +214,7 @@ static esp_err_t image_handler(httpd_req_t *req) {
 // /theme/*
 static esp_err_t theme_image_handler(httpd_req_t *req) {
   ESP_LOGI(TAG, "/theme called");
+  
   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
 
   // extract digit
@@ -223,33 +226,97 @@ static esp_err_t theme_image_handler(httpd_req_t *req) {
   }
   const char *digit_str = uri + strlen(prefix);
 
-  // validate
+  // validate digit
   if (digit_str[0] < '0' || digit_str[0] > '9' || digit_str[1] != '\0') {
     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Theme digit must be 0-9");
     return ESP_FAIL;
   }
   int digit = digit_str[0] - '0';
 
-  // retreive image
-  uint16_t *pixels = NULL;
-  int width = 0;
-  int height = 0;
-  esp_err_t err = receive_rgb565_image(req, &pixels, &width, &height);
-  if (err != ESP_OK) {
-    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid image data");
-    return err;
-  }
-
-  // theme_setImage takes ownership of pixels on success
-  if (!theme_setImage(digit, pixels, width, height)) {
-    free(pixels);
-    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR,
-                        "Failed to store image");
-
+  // get dimensions
+  char width_str[16];
+  char height_str[16];
+  
+  if (httpd_req_get_hdr_value_str(req, "X-Image-Width", // width exists
+				  width_str, sizeof(width_str)) != ESP_OK ||  
+      httpd_req_get_hdr_value_str(req, "X-Image-Height", // height exists
+				  height_str, sizeof(height_str)) != ESP_OK) { 
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing image dimensions");
     return ESP_FAIL;
   }
-  ESP_LOGI(TAG, "Stored theme digit %d (%dx%d)", digit, width, height);
 
+  int width = atoi(width_str);
+  int height = atoi(height_str);
+
+  ESP_LOGI(TAG, "Theme digit %d: %d x %d", digit, width, height);
+
+  // validate dimensions
+  if (width <= 0 || height <= 0 ||
+      width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid image dimensions");
+    return ESP_FAIL;
+  }
+
+  // validate request size
+  size_t image_size = (size_t)width * height * 2;
+
+  if (req->content_len != image_size) {
+    ESP_LOGE(TAG, "Expected %zu bytes, received %d", image_size, req->content_len);
+
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid image size");
+    return ESP_FAIL;
+  }
+
+  // start writing the image to LittleFS
+  if (!theme_beginWrite(digit, width, height)) {
+    ESP_LOGE(TAG, "Failed to begin theme write");
+
+    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to open theme file");
+    return ESP_FAIL;
+  }
+
+  uint8_t buffer[THEME_WRITE_BUFFER_SIZE];
+  size_t received = 0;
+
+  while (received < image_size) {
+    size_t remaining = image_size - received;
+    size_t to_receive = remaining < sizeof(buffer) ? remaining : sizeof(buffer);
+
+    int ret = httpd_req_recv(req, (char *)buffer, to_receive);
+
+    if (ret <= 0) {
+      ESP_LOGE(TAG, "httpd_req_recv failed: ret=%d, received=%zu/%zu",
+	       ret, received, image_size);
+
+      // close the file without marking the image as valid
+      theme_endWrite();
+      
+      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to receive image");
+      return ESP_FAIL;
+    }
+
+    if (!theme_write(buffer, ret)) {
+      ESP_LOGE(TAG, "Failed to write theme data");
+
+      theme_endWrite();
+
+      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to write theme");
+      return ESP_FAIL;
+    }
+
+    received += ret;
+  }
+
+  // finish the file
+  if (!theme_endWrite()) {
+    ESP_LOGE(TAG, "Faild to finish theme write");
+    
+    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to finish theme");
+    return ESP_FAIL;
+  }
+
+  ESP_LOGI(TAG, "Stored theme digit %d (%dx%d, %zu bytes)",
+	   digit, width, height, received);
 
   httpd_resp_set_status(req, "200 OK");
   httpd_resp_set_type(req, "text/plain");

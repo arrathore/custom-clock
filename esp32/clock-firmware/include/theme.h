@@ -6,7 +6,7 @@
 
 // data structure for images
 typedef struct {
-  uint16_t *pixels;
+  bool exists;
   int width;
   int height;
 } theme_image_t;
@@ -21,13 +21,15 @@ void theme_unlock(void);
 // check if the currently loaded theme has an asset for a digit
 bool theme_containsImage(int digit);
 
-// get the image for a digit from the current theme
-const theme_image_t *theme_getImage(int digit);
-
 // set an image for a digit
-bool theme_setImage(int digit, uint16_t* pixels, int width, int height);
+bool theme_beginWrite(int digit, int width, int height);
+bool theme_write(const void *data, size_t size);
+bool theme_endWrite(void);
 
-// reset all theme assets to NULL
+// get an image out of the theme
+bool theme_readImage(int digit, uint16_t *pixels, size_t pixel_count);
+
+// reset all theme assets
 void theme_clear(void);
 
 #endif
