@@ -43,7 +43,7 @@ export default function ThemePreview({
                                         gap: `${spacing}px`,
                                     }}
                                 >
-                                    {timeString.split(":")[0].split("").map((character, index) => (
+                                    {formatTime(timeString, use24Hour).split(":")[0].split("").map((character, index) => (
                                         <ThemeDigit
                                             key={`hour-${character}-${index}`}
                                             digit={character}
