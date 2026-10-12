@@ -171,4 +171,11 @@ esp_err_t display_drawImage(lcd_st7735_t *lcd,
 				width, height,
 				pixels);
 }
+
+esp_err_t display_clear(lcd_st7735_t *lcd) {
+  if (lcd == NULL)
+    return ESP_ERR_INVALID_ARG;
+
+  return lcd_st7735_fill_screen(lcd, LCD_ST7735_RGB565(0, 0, 0));
+}
   
