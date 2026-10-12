@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "esp_system.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
 
@@ -211,6 +212,7 @@ static esp_err_t image_handler(httpd_req_t *req) {
   return ESP_OK;
 }
 
+static int received_digits = 0;
 // /theme/*
 static esp_err_t theme_image_handler(httpd_req_t *req) {
   ESP_LOGI(TAG, "/theme called");
@@ -309,7 +311,7 @@ static esp_err_t theme_image_handler(httpd_req_t *req) {
 
   // finish the file
   if (!theme_endWrite()) {
-    ESP_LOGE(TAG, "Faild to finish theme write");
+    ESP_LOGE(TAG, "Failed to finish theme write");
     
     httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to finish theme");
     return ESP_FAIL;
@@ -322,6 +324,7 @@ static esp_err_t theme_image_handler(httpd_req_t *req) {
   httpd_resp_set_type(req, "text/plain");
   httpd_resp_sendstr(req, "OK");
 
+  if (++received_digits >= 10) esp_restart();
   return ESP_OK;
 }
 
