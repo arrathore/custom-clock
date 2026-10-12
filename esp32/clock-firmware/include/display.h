@@ -23,5 +23,8 @@ esp_err_t display_drawImage(lcd_st7735_t *lcd,
                             int width, int height,
 			    int x, int y);
 
+// clear the screen
+esp_err_t display_clear(lcd_st7735_t *lcd);
+
 #endif
 			    
