@@ -22,7 +22,10 @@ export async function sendImage(ip, pixels, width, height) {
     return response.text();
 }
 
-export async function sendTheme(ip, theme, width, height) {
+export async function sendTheme(ip, theme, width, height, onProgress) {
+    const totalDigits = Object.keys(theme.digits).length;
+    let completed = 0;
+
     for (const digit of Object.keys(theme.digits)) {
 	const asset = theme.digits[digit];
 
@@ -42,6 +45,11 @@ export async function sendTheme(ip, theme, width, height) {
 
 	if (!response.ok)
 	    throw new Error(`ESP32 returned HTTP ${response.status} for digit ${digit}`);
+
+        completed++;
+        if (onProgress) {
+            onProgress(completed, totalDigits);
+        }
     }
 
     return true;

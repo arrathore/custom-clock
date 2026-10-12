@@ -9,6 +9,7 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
     const [status, setStatus] = useState(null);
     const [sending, setSending] = useState(false);
     const [sendingTheme, setSendingTheme] = useState(false);
+    const [themeProgress, setThemeProgress] = useState({ current: 0, total: 0 });
 
     if (!convertedTheme) return null;
 
@@ -55,6 +56,7 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
 
         setSendingTheme(true);
         setStatus(null);
+        setThemeProgress({ current: 0, total: DIGITS.length });
 
         try {
             // Process all digits to scaledWidth x digitHeight just like single image or preview
@@ -81,7 +83,9 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
                 digits: processedDigits,
             };
 
-            await sendTheme(ip.trim(), processedTheme, scaledWidth, digitHeight);
+            await sendTheme(ip.trim(), processedTheme, scaledWidth, digitHeight, (current, total) => {
+                setThemeProgress({ current, total });
+            });
             setStatus({ type: 'success', message: 'Successfully sent entire theme!' });
         } catch (err) {
             setStatus({ type: 'error', message: `Failed to send theme: ${err.message}` });
@@ -137,6 +141,18 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
                     <button type="submit" disabled={sending || sendingTheme}>
                         {sendingTheme ? 'Sending Theme...' : 'Send Entire Theme'}
                     </button>
+
+                    {sendingTheme && themeProgress.total > 0 && (
+                        <div style={{ marginTop: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px', color: '#666' }}>
+                                <span>Sending digit {themeProgress.current} of {themeProgress.total}</span>
+                                <span>{Math.round((themeProgress.current / themeProgress.total) * 100)}%</span>
+                            </div>
+                            <div style={{ width: '100%', height: '8px', background: '#ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ width: `${(themeProgress.current / themeProgress.total) * 100}%`, height: '100%', background: '#333', transition: 'width 0.2s ease' }} />
+                            </div>
+                        </div>
+                    )}
                 </form>
             </div>
 
