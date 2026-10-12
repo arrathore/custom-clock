@@ -7,7 +7,7 @@
 #include "display.h"
 #include "theme.h"
 
-static const char *TAG = "clock_display";
+static const char *TAG = "face";
 
 #define DISPLAY_WIDTH 128
 #define DISPLAY_HEIGHT 160
@@ -57,7 +57,7 @@ esp_err_t face_init(bool use_24_hour) {
   s_digit_width = width;
   s_digit_height = height;
 
-  // Ensure every digit exists and uses the same dimensions. 
+  // ensure every digit exists and uses the same dimensions. 
   for (int digit = 0; digit < DIGIT_COUNT; ++digit) {
     int digit_width = 0;
     int digit_height = 0;

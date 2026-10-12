@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -22,7 +23,7 @@
 static const char *TAG = "main";
 
 // display test
-void disp_test() {
+void displayTest() {
   lcd_st7735_t *lcd = display_getHandle();
   lcd_st7735_fill_screen(lcd, 0xF800); // red
   vTaskDelay(pdMS_TO_TICKS(1000));
@@ -37,7 +38,7 @@ void disp_test() {
 }
 
 // storage test
-void store_test() {
+void storageTest() {
   FILE *file = fopen("/storage/test.txt", "w");
   if (file == NULL) {
     ESP_LOGE("TEST", "Failed to open test.txt");
@@ -49,20 +50,8 @@ void store_test() {
   }  
 }
 
-void app_main(void) {
-  vTaskDelay(pdMS_TO_TICKS(5000)); // delay for serial output
-  printf("START\n");
-  fflush(stdout);
-
-  display_init();
-  esp_err_t err = storage_init();
-  if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Storage initialization failed: %s", esp_err_to_name(err));
-    return;
-  }
-  theme_init();
-
-  /*
+// theme test
+void themeTest() {
   // find the dimensions of the first available digit
   int theme_width = 0;
   int theme_height = 0;
@@ -89,16 +78,81 @@ void app_main(void) {
   } else {
     ESP_LOGI(TAG, "No theme images found");
   }
-  */
 
-  err = face_init(CLOCK_USE_24_HOUR);
+  for (int i = 0; i < THEME_DIGITS; i++) {
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    // no theme loaded
+    if (pixels == NULL) {
+      ESP_LOGI(TAG, "No theme loaded");
+      break;
+    }
+
+    // digit does not exist
+    if (!theme_containsImage(i)) {
+      ESP_LOGI(TAG, "Digit %d does not exist", i);
+      continue;
+    }
+
+    // failed to read digit
+    if (!theme_readImage(i, pixels, (size_t)theme_width * theme_height)) {
+      ESP_LOGI(TAG, "Failed to read digit %d", i);
+      continue;
+    }
+
+    ESP_LOGI(TAG, "Displaying theme digit %d", i);
+
+    display_drawImage(display_getHandle(), pixels, theme_width, theme_height, 0, 0);
+  }
+}
+
+static bool checkTheme(void) {
+  for (int i = 0; i < THEME_DIGITS; i++) {
+    int width = 0;
+    int height = 0;
+
+    if (!theme_getImageInfo(i, &width, &height)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void app_main(void) {
+  vTaskDelay(pdMS_TO_TICKS(5000)); // delay for serial output
+  printf("START\n");
+  fflush(stdout);
+
+  display_init();
+  esp_err_t err = storage_init();
   if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Clock face initialization failed: %s", esp_err_to_name(err));
+    ESP_LOGE(TAG, "Storage initialization failed: %s", esp_err_to_name(err));
     return;
   }
+  theme_init();
+
 
   wifi_init();
   server_init();
+
+  // wait for theme
+  while (!checkTheme()) {
+    ESP_LOGI(TAG, "Waiting for a valid theme upload...");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
+  
+  err = face_init(CLOCK_USE_24_HOUR);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Clock face initialization failed: %s", esp_err_to_name(err));
+    if (err == ESP_ERR_INVALID_SIZE) {
+      ESP_LOGW(TAG, "Existing theme has invalid size. Deleting theme assets and restarting...");
+      theme_clear();
+      vTaskDelay(pdMS_TO_TICKS(1000));
+      esp_restart();
+    }
+    return;
+  }
 
   err = clock_init();
   if (err != ESP_OK) {
@@ -110,58 +164,31 @@ void app_main(void) {
   int last_minute = -1;
 
   while (1) {
-    struct tm now;
+    if (checkTheme()) {
+      struct tm now;
 
-    if (clock_getTime(&now) == ESP_OK) {
-      if (now.tm_hour != last_hour ||
-	  now.tm_min != last_minute) {
+      if (clock_getTime(&now) == ESP_OK) {
+	if (now.tm_hour != last_hour ||
+	    now.tm_min != last_minute) {
 
-	err = face_update(&now);
+	  err = face_update(&now);
 
-	if (err == ESP_OK) {
-	  last_hour = now.tm_hour;
-	  last_minute = now.tm_min;
+	  if (err == ESP_OK) {
+	    last_hour = now.tm_hour;
+	    last_minute = now.tm_min;
 
-	  ESP_LOGI(TAG, "Displayed time: %02d:%02d",
-		   now.tm_hour, now.tm_min);
-	} else {
-	  ESP_LOGE(TAG, "Display update failed: %s",
-		   esp_err_to_name(err));
+	    ESP_LOGI(TAG, "Displayed time: %02d:%02d",
+		     now.tm_hour, now.tm_min);
+	  } else {
+	    ESP_LOGE(TAG, "Display update failed: %s",
+		     esp_err_to_name(err));
+	  }
 	}
+      } else {
+	// Wait for SNTP to establish a valid system time.
+	ESP_LOGD(TAG, "Waiting for synchronized time");
       }
-    } else {
-      // Wait for SNTP to establish a valid system time.
-      ESP_LOGD(TAG, "Waiting for synchronized time");
     }
-
     vTaskDelay(pdMS_TO_TICKS(1000));
-    
-    /*
-    for (int i = 0; i < THEME_DIGITS; i++) {
-      vTaskDelay(pdMS_TO_TICKS(500));
-
-      // no theme loaded
-      if (pixels == NULL) {
-	ESP_LOGI(TAG, "No theme loaded");
-	break;
-      }
-
-      // digit does not exist
-      if (!theme_containsImage(i)) {
-	ESP_LOGI(TAG, "Digit %d does not exist", i);
-	continue;
-      }
-
-      // failed to read digit
-      if (!theme_readImage(i, pixels, (size_t)theme_width * theme_height)) {
-	ESP_LOGI(TAG, "Failed to read digit %d", i);
-	continue;
-      }
-
-      ESP_LOGI(TAG, "Displaying theme digit %d", i);
-
-      display_drawImage(display_getHandle(), pixels, theme_width, theme_height, 0, 0);
-    }
-    */
   }
 }
