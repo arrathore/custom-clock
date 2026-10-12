@@ -5,11 +5,16 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 
+#include "esp_log.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
 #define THEME_DIGITS 10
 #define THEME_PATH "/storage/theme"
+
+#define THEME_HEADER_SIZE 4
+#define THEME_READ_BUFFER_SIZE 512
 
 static theme_image_t images[THEME_DIGITS];
 
@@ -27,19 +32,44 @@ static void getImagePath(int digit, char *path, size_t path_size) {
 void theme_init(void) {
   theme_mutex = xSemaphoreCreateMutex();
 
-  mkdir(THEME_PATH, 0777);
+  int mkdir_result = mkdir(THEME_PATH, 0777);
+  ESP_LOGI("theme", "mkdir(%s): %d", THEME_PATH, mkdir_result);
+
   char image_path[64];
   for (int i = 0; i < THEME_DIGITS; i++) {
     getImagePath(i, image_path, sizeof(image_path));
 
     struct stat st;
-    if (stat(image_path, &st) == 0)
+    if (stat(image_path, &st) == 0) {
       images[i].exists = true;
-    else
-      images[i].exists = false;
 
-    images[i].width = 0;
-    images[i].height = 0;
+      // dimensions are loaded from file haeder
+      FILE *file = fopen(image_path, "rb");
+
+      if (file != NULL) {
+	uint8_t header[THEME_HEADER_SIZE];
+
+	if (fread(header, 1, sizeof(header), file) == sizeof(header)) {
+	  images[i].width = ((int)header[0] << 8) | header[1];
+	  images[i].height = ((int)header[2] << 8) | header[3];
+	} else {
+	  images[i].exists = false;
+	  images[i].width = 0;
+	  images[i].height = 0;
+	}
+
+	fclose(file);
+      } else {
+	images[i].exists = false;
+	images[i].width = 0;
+	images[i].height = 0;
+      }
+    }
+    else {
+      images[i].exists = false;
+      images[i].width = 0;
+      images[i].height = 0;
+    }
   }
 }
 
@@ -52,6 +82,25 @@ bool theme_containsImage(int digit) {
   theme_unlock();
 
   return exists;
+}
+
+bool theme_getImageInfo(int digit, int *width, int *height) {
+  if (digit < 0 || digit >= THEME_DIGITS ||
+      width == NULL || height == NULL)
+    return false;
+
+  theme_lock();
+
+  if (!images[digit].exists) {
+    theme_unlock();
+    return false;
+  }
+
+  *width = images[digit].width;
+  *height = images[digit].height;
+
+  theme_unlock();
+  return true;
 }
 
 // create or overwrite a file for writing
@@ -78,7 +127,24 @@ bool theme_beginWrite(int digit, int width, int height) {
 
   write_digit = digit;
 
-  // if the image previously existed, it doesn't anymore
+  // write width and height as big endian uint16_t values
+  uint8_t header[THEME_HEADER_SIZE] = {
+    (uint8_t)((width >> 8) & 0xff),
+    (uint8_t)(width & 0xff),
+    (uint8_t)((height >> 8) & 0xff),
+    (uint8_t)(height & 0xff)
+  };
+
+  if (fwrite(header, 1, sizeof(header), write_file) != sizeof(header)) {
+    fclose(write_file);
+    write_file = NULL;
+    write_digit = -1;
+
+    theme_unlock();
+    return false;
+  }
+
+  // image is not valid until upload completes
   images[digit].exists = false;
   images[digit].width = width;
   images[digit].height = height;
@@ -136,20 +202,22 @@ bool theme_readImage(int digit, uint16_t *pixels, size_t pixel_count) {
 
   theme_lock();
 
-  if (!images[digit].exists) {
+  if (!images[digit].exists ||
+      images[digit].width <= 0 || images[digit].height <= 0) {
     theme_unlock();
     return false;
   }
 
-  size_t expected_size = (size_t)images[digit].width * images[digit].height * 2;
+  size_t expected_pixels = (size_t)images[digit].width * images[digit].height;
 
-  if (pixel_count * sizeof(uint16_t) < expected_size) {
+  if (pixel_count < expected_pixels) {
     theme_unlock();
     return false;
   }
 
   char image_path[64];
   getImagePath(digit, image_path, sizeof(image_path));
+  
   FILE *file = fopen(image_path, "rb");
 
   if (file == NULL) {
@@ -157,16 +225,26 @@ bool theme_readImage(int digit, uint16_t *pixels, size_t pixel_count) {
     return false;
   }
 
-  uint8_t buffer[512];
+  // skip 4 byte size header
+  if (fseek(file, THEME_HEADER_SIZE, SEEK_SET) != 0) {
+    fclose(file);
+    theme_unlock();
+    return false;
+  }
+  
+  uint8_t buffer[THEME_READ_BUFFER_SIZE];
   size_t pixel_index = 0;
 
   // read image into the buffer
-  while (pixel_index * 2 < expected_size) {
-    size_t remaining = expected_size - pixel_index * 2;
-    size_t chunk_size = remaining < sizeof(buffer) ? remaining : sizeof(buffer);
-
+  while (pixel_index < expected_pixels) {
+    size_t remaining_pixels = expected_pixels - pixel_index;
+    size_t remaining_bytes = remaining_pixels * 2;
+    
+    size_t chunk_size = remaining_bytes < sizeof(buffer) ? remaining_bytes : sizeof(buffer);
+    // RGB565 is 2 bytes per pixel, make suer we never split a pixel across iterations
+    chunk_size &= ~((size_t)1);
+    
     size_t bytes_read = fread(buffer, 1, chunk_size, file);
-
     if (bytes_read != chunk_size) {
       fclose(file);
       theme_unlock();

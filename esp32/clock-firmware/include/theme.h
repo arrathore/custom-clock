@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 // data structure for images
 typedef struct {
@@ -28,6 +29,9 @@ bool theme_endWrite(void);
 
 // get an image out of the theme
 bool theme_readImage(int digit, uint16_t *pixels, size_t pixel_count);
+
+// get the dimensions of a stored image
+bool theme_getImageInfo(int digit, int *width, int *height);
 
 // reset all theme assets
 void theme_clear(void);
