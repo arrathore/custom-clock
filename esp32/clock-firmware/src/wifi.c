@@ -48,12 +48,20 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 
 void wifi_init(void) {
   ESP_ERROR_CHECK(nvs_flash_init());
-
   ESP_ERROR_CHECK(esp_netif_init());
-
   ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-  esp_netif_create_default_wifi_sta();
+  esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+
+  // set custom hostname
+  if (sta_netif != NULL) {
+    esp_err_t err = esp_netif_set_hostname(sta_netif, "esp-clock");
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "Failed to set hostname: %s", esp_err_to_name(err));
+    } else {
+      ESP_LOGI(TAG, "Hostname set successfully");
+    }
+  }
 
   wifi_event_group = xEventGroupCreate();
 
