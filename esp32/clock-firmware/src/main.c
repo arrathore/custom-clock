@@ -13,34 +13,31 @@
 #include "server.h"
 #include "theme.h"
 #include "storage.h"
+#include "clock.h"
+#include "face.h"
 
 #define THEME_DIGITS 10
+#define  CLOCK_USE_24_HOUR true
 
 static const char *TAG = "main";
-void app_main(void) {
-  vTaskDelay(pdMS_TO_TICKS(5000)); // delay for serial output
-  printf("START\n");
-  fflush(stdout);
 
-  display_init();
-  // display test
-  /*
-    lcd_st7735_t *lcd = display_getHandle();
-    lcd_st7735_fill_screen(lcd, 0xF800); // red
-    vTaskDelay(pdMS_TO_TICKS(1000));
+// display test
+void disp_test() {
+  lcd_st7735_t *lcd = display_getHandle();
+  lcd_st7735_fill_screen(lcd, 0xF800); // red
+  vTaskDelay(pdMS_TO_TICKS(1000));
 
-    lcd_st7735_fill_screen(lcd, 0x07E0); // green
-    vTaskDelay(pdMS_TO_TICKS(1000));
+  lcd_st7735_fill_screen(lcd, 0x07E0); // green
+  vTaskDelay(pdMS_TO_TICKS(1000));
 
-    lcd_st7735_fill_screen(lcd, 0x001F); // blue
-    vTaskDelay(pdMS_TO_TICKS(1000));
+  lcd_st7735_fill_screen(lcd, 0x001F); // blue
+  vTaskDelay(pdMS_TO_TICKS(1000));
 
-    lcd_st7735_fill_screen(lcd, 0x0000); // black
-  */
+  lcd_st7735_fill_screen(lcd, 0x0000); // black  
+}
 
-  ESP_ERROR_CHECK(storage_init());
-  /*
-  // storage test
+// storage test
+void store_test() {
   FILE *file = fopen("/storage/test.txt", "w");
   if (file == NULL) {
     ESP_LOGE("TEST", "Failed to open test.txt");
@@ -49,11 +46,23 @@ void app_main(void) {
     fclose(file);
 
     ESP_LOGI("TEST", "Successfully wrote test.txt");
+  }  
+}
+
+void app_main(void) {
+  vTaskDelay(pdMS_TO_TICKS(5000)); // delay for serial output
+  printf("START\n");
+  fflush(stdout);
+
+  display_init();
+  esp_err_t err = storage_init();
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Storage initialization failed: %s", esp_err_to_name(err));
+    return;
   }
-  */
-  
   theme_init();
-  
+
+  /*
   // find the dimensions of the first available digit
   int theme_width = 0;
   int theme_height = 0;
@@ -80,11 +89,54 @@ void app_main(void) {
   } else {
     ESP_LOGI(TAG, "No theme images found");
   }
-  
+  */
+
+  err = face_init(CLOCK_USE_24_HOUR);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Clock face initialization failed: %s", esp_err_to_name(err));
+    return;
+  }
+
   wifi_init();
   server_init();
 
+  err = clock_init();
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Clock initialization failed: %s", esp_err_to_name(err));
+    return;
+  }
+
+  int last_hour = -1;
+  int last_minute = -1;
+
   while (1) {
+    struct tm now;
+
+    if (clock_getTime(&now) == ESP_OK) {
+      if (now.tm_hour != last_hour ||
+	  now.tm_min != last_minute) {
+
+	err = face_update(&now);
+
+	if (err == ESP_OK) {
+	  last_hour = now.tm_hour;
+	  last_minute = now.tm_min;
+
+	  ESP_LOGI(TAG, "Displayed time: %02d:%02d",
+		   now.tm_hour, now.tm_min);
+	} else {
+	  ESP_LOGE(TAG, "Display update failed: %s",
+		   esp_err_to_name(err));
+	}
+      }
+    } else {
+      // Wait for SNTP to establish a valid system time.
+      ESP_LOGD(TAG, "Waiting for synchronized time");
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    
+    /*
     for (int i = 0; i < THEME_DIGITS; i++) {
       vTaskDelay(pdMS_TO_TICKS(500));
 
@@ -110,5 +162,6 @@ void app_main(void) {
 
       display_drawImage(display_getHandle(), pixels, theme_width, theme_height, 0, 0);
     }
+    */
   }
 }
