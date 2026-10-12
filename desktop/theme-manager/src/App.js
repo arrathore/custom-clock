@@ -43,14 +43,18 @@ function App() {
 
     const files = Array.from(event.target.files);
 
-    // ignore everything except PNG files that match our format
+    // ignore everything except PNG and GIF files that match our format
     const digitFiles = {};
 
     for (const file of files) {
-      const match = file.name.match(/^([0-9])\.png$/i);
+      const match = file.name.match(/^([0-9])\.(png|gif)$/i);
       
       if (match) {
-        digitFiles[match[1]] = file;
+        // If there are duplicate digit files with different extensions (e.g. 0.png and 0.gif),
+        // we can prioritize or just store. Let's make sure we take whichever matches or prioritize png/gif.
+        if (!digitFiles[match[1]]) {
+          digitFiles[match[1]] = file;
+        }
       }
     }
 
@@ -59,7 +63,7 @@ function App() {
     if (missing.length > 0) {
       setError(
         `Theme is missing: ${missing
-          .map((digit) => `${digit}.png`)
+          .map((digit) => `${digit}.png/.gif`)
           .join(", ")}`
       );
       return;
@@ -104,14 +108,15 @@ function App() {
       
       // enforce consistent height across theme digits
       const firstHeight = loadedTheme["0"].height;
+      const tolerance = 30;
       const inconsistentHeight = DIGITS.find(
-        (digit) => loadedTheme[digit].height !== firstHeight
+        (digit) => Math.abs(loadedTheme[digit].height - firstHeight) > tolerance
       );
       
       if (inconsistentHeight !== undefined) {
         setError(
-          `Digit heights are inconsistent. 0.png is ${firstHeight}px high, ` +
-            `${inconsistentHeight}.png is ${loadedTheme[inconsistentHeight].height}px high.`
+          `Digit heights are inconsistent. 0.png/gif is ${firstHeight}px high, ` +
+            `${inconsistentHeight}.png/gif is ${loadedTheme[inconsistentHeight].height}px high (exceeds ${tolerance}px tolerance).`
         );
         return;
       }

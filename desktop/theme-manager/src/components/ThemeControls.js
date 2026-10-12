@@ -35,13 +35,13 @@ export default function ThemeControls({
                         webkitdirectory=""
                         directory=""
                         multiple
-                        accept=".png,image/png"
+                        accept=".png,.gif,image/png,image/gif"
                         onChange={onThemeFolder}
                     />
                 </label>
 
                 <p className="help">
-                    The folder must contain 0.png through 9.png
+                    The folder must contain 0.png through 9.png (or 0.gif through 9.gif)
                 </p>
 
                 {error && <div className="error">{error}</div>}
