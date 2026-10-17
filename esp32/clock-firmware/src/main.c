@@ -186,7 +186,7 @@ void app_main(void) {
 	}
       } else {
 	// Wait for SNTP to establish a valid system time.
-	ESP_LOGD(TAG, "Waiting for synchronized time");
+	ESP_LOGI(TAG, "Waiting for synchronized time");
       }
     }
     vTaskDelay(pdMS_TO_TICKS(1000));
