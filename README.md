@@ -1,5 +1,7 @@
 # ESP32 Customizable Clock
 
+![Example themes on the clock](3-faces-comp.png)
+
 A digital clock that you can easily customize with your own
 themes. Use a web app frontend to preview and upload assets, and watch
 the clock update live.
