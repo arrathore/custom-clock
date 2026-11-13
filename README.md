@@ -58,7 +58,7 @@ From `esp32/clock-firmware/`:
 The frontend is a React app. Run it on a computer connected to the
 same network that you connected the ESP32 to.
 
-From `desktop/theme-manager/`:
+From `theme-manager/`:
 
 	npm start
 	
