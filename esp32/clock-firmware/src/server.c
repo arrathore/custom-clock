@@ -18,9 +18,9 @@
 
 #define THEME_WRITE_BUFFER_SIZE 512
 
-// /
+// /alive
 static esp_err_t root_handler(httpd_req_t *req) {
-  ESP_LOGI(TAG, "/ called");
+  ESP_LOGI(TAG, "/alive called");
   httpd_resp_set_type(req, "text/plain");
   httpd_resp_sendstr(req, "custom-clock is alive!\n");
 
@@ -353,7 +353,7 @@ void server_init(void) {
   }
 
   httpd_uri_t root_uri = {
-      .uri = "/",
+      .uri = "/alive",
       .method = HTTP_GET,
       .handler = root_handler,
       .user_ctx = NULL,
@@ -389,6 +389,9 @@ void server_init(void) {
   };
   httpd_register_uri_handler(server, &theme_image_uri);
   httpd_register_uri_handler(server, &theme_options_uri);
+
+  // Register hello world webpage from page_server.c
+  register_page_server(server);
   
   ESP_LOGI(TAG, "HTTP server started");
 }
