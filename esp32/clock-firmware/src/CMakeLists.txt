@@ -8,3 +8,10 @@ idf_component_register(SRCS "clock.c"
                      "theme.c"
                      "wifi.c"
                     INCLUDE_DIRS "../include")
+
+littlefs_create_partition_image(
+    web
+    "${CMAKE_SOURCE_DIR}/web/www"
+    FLASH_IN_PROJECT
+)
+
