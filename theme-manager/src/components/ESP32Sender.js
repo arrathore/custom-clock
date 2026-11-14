@@ -4,7 +4,7 @@ import { sendImage, sendTheme } from '../utils/esp32';
 import { convertToRGB565 } from '../utils/imageUtils';
 
 export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, backgroundColor }) {
-    const [ip, setIp] = useState('');
+    // const [ip, setIp] = useState('');
     const [selectedDigit, setSelectedDigit] = useState('0');
     const [status, setStatus] = useState(null);
     const [sending, setSending] = useState(false);
@@ -18,10 +18,12 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
 
     const handleSend = async (e) => {
         e.preventDefault();
+	/*
         if (!ip.trim()) {
             setStatus({ type: 'error', message: 'Please enter an ESP32 IP address.' });
             return;
-        }
+            }
+	    */
 
         const asset = convertedTheme.digits[selectedDigit];
         
@@ -38,7 +40,7 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
             const imageData = ctx.getImageData(0, 0, scaledWidth, digitHeight);
             const { rgb565 } = convertToRGB565(imageData, backgroundColor);
             
-            const result = await sendImage(ip.trim(), rgb565, scaledWidth, digitHeight);
+            const result = await sendImage(rgb565, scaledWidth, digitHeight);
             setStatus({ type: 'success', message: `Successfully sent image! Response: ${result || 'OK'}` });
         } catch (err) {
             setStatus({ type: 'error', message: `Failed to send image: ${err.message}` });
@@ -49,11 +51,13 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
 
     const handleSendTheme = async (e) => {
         e.preventDefault();
+	/*
         if (!ip.trim()) {
             setStatus({ type: 'error', message: 'Please enter an ESP32 IP address.' });
             return;
         }
-
+	*/
+	
         setSendingTheme(true);
         setStatus(null);
         setThemeProgress({ current: 0, total: DIGITS.length });
@@ -83,7 +87,7 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
                 digits: processedDigits,
             };
 
-            await sendTheme(ip.trim(), processedTheme, scaledWidth, digitHeight, (current, total) => {
+            await sendTheme(processedTheme, scaledWidth, digitHeight, (current, total) => {
                 setThemeProgress({ current, total });
             });
             setStatus({ type: 'success', message: 'Successfully sent entire theme!' });
@@ -97,7 +101,7 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
     return (
         <div className="control-section esp32-sender">
             <h2>Send to ESP32</h2>
-            
+            {/*
             <div style={{ marginBottom: '20px' }}>
                 <label>
                     ESP32 IP Address
@@ -109,7 +113,7 @@ export default function ESP32Sender({ convertedTheme, themeHeight, digitHeight, 
                     />
                 </label>
             </div>
-
+	     */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <form onSubmit={handleSend}>
                     <h3>Send Single Image</h3>

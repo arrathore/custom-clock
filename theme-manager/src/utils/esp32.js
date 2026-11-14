@@ -1,12 +1,12 @@
 import { rgb565ToBytes } from "./imageUtils";
 
-export async function sendImage(ip, pixels, width, height) {
+export async function sendImage(pixels, width, height) {
     const bytes = rgb565ToBytes(pixels);
 
     console.log("pixels:", pixels.length);
     console.log("bytes:", bytes.length);
 
-    const response = await fetch(`http://${ip}/image`, {
+    const response = await fetch(`/image`, {
 	method: "POST",
 	headers: {
 	    "Content-Type": "application/octet-stream",
@@ -22,7 +22,7 @@ export async function sendImage(ip, pixels, width, height) {
     return response.text();
 }
 
-export async function sendTheme(ip, theme, width, height, onProgress) {
+export async function sendTheme(theme, width, height, onProgress) {
     const totalDigits = Object.keys(theme.digits).length;
     let completed = 0;
 
@@ -33,7 +33,7 @@ export async function sendTheme(ip, theme, width, height, onProgress) {
 
 	console.log(`Sending digit ${digit}:`, `${width}x${height}`, `${bytes.length} bytes`);
 
-	const response = await fetch(`http://${ip}/theme/${digit}`, {
+	const response = await fetch(`/theme/${digit}`, {
 	    method: "POST",
 	    headers: {
 		"Content-Type": "application/octet-stream",
