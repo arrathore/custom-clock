@@ -126,8 +126,8 @@ export default function ThemeControls({
                         value={previewStyle}
                         onChange={(event) => setPreviewStyle(event.target.value)}
                     >
-                        <option value="row">Row</option>
                         <option value="stacked">Stacked</option>
+			<option value="row">Row</option>
                     </select>
                 </label>
 

@@ -26,7 +26,7 @@ function App() {
   });
 
   const [use24Hour, setUse24Hour] = useState(true);
-  const [previewStyle, setPreviewStyle] = useState('row');
+  const [previewStyle, setPreviewStyle] = useState('stacked');
 
   // determine scale from height of theme's digits
   const scale = useMemo(() => {
