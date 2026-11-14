@@ -10,6 +10,7 @@ the clock update live.
 - Wi-Fi connectivity for easy access to device.
 - Persistent digit themes (survives reboots) stored as RGB565 image data.
 - Intuitive React-based web app to manage theme assets and clock appearance.
+- Web app hosted directly on the ESP32
 
 ## Hardware
 - Microcontroller: ESP32-C6
@@ -17,14 +18,14 @@ the clock update live.
 
 To recreate it on a breadboard, the pin connections are:
 
-	ST7735       ESP32-C6
-	PIN_SPI_SCK  19
-	PIN_SPI_MISO 20
-	PIN_SPI_MOSI 18
-
-	PIN_TFT_CS   17
-	PIN_TFT_DC   1 
-	PIN_TFT_RST  0 
+| ST7735         | ESP32-C6 |
+|----------------|----------|
+| `PIN_SPI_SCK`  | 19       |
+| `PIN_SPI_MISO` | 20       |
+| `PIN_SPI_MOSI` | 18       |
+| `PIN_TFT_CS`   | 17       |
+| `PIN_TFT_DC`   | 1        |
+| `PIN_TFT_RST`  | 0        |
 
 I will be creating and publishing a full PCB for this soon as well.
 
@@ -47,27 +48,25 @@ Wi-Fi credentials are currently set via a user configured file,
 This will be updated to an interactive process soon.
 
 #### 2. Build, flash, and monitor
-The device firmware is compiled and flashed with PlatformIO.
+The device firmware is compiled and flashed with PlatformIO. The
+frontend is built with `npm`.
 
-From `esp32/clock-firmware/`:
+First, build the frontend:
+
+```
+./scripts/build_frontend.sh
+```
+
+Then, from `esp32/clock-firmware/`:
 
 	pio run -t upload -t monitor
 
 ## Run the Web App
-
-The frontend is a React app. Run it on a computer connected to the
-same network that you connected the ESP32 to.
-
-From `theme-manager/`:
-
-	npm start
 	
-This will launch the app in your browser. If it doesn't launch
-automatically, manually navigate to `localhost:3000`. From here, you
-can upload images to represent digits 0-9 on the clock face. To upload
-the images to your clock, you will need it's IP address. You can get
-this by pinging the device with `ping esp-clock`.
+On a device connected to the same network as the ESP32, use a browser
+to go to (http://esp-clock). From here, you can directly upload images
+to represent digits 0-9 on the clock face.
 
-
-
+The other modules on this page are a preview, for features that will
+be added later!
 

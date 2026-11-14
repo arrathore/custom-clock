@@ -1,6 +1,17 @@
-# This file was automatically generated for projects
-# without default 'CMakeLists.txt' file.
+idf_component_register(SRCS "clock.c"
+                     "display.c"
+                     "face.c"
+                     "main.c"
+                     "page_server.c"
+                     "server.c"
+                     "storage.c"
+                     "theme.c"
+                     "wifi.c"
+                    INCLUDE_DIRS "../include")
 
-FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
+littlefs_create_partition_image(
+    web
+    "${CMAKE_SOURCE_DIR}/web/www"
+    FLASH_IN_PROJECT
+)
 
-idf_component_register(SRCS ${app_sources})
